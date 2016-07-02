@@ -1,4 +1,4 @@
-55658799bb7699bbc5a3fa0493dc25a6 *DESCRIPTION
+d8905b9c8275e6c444476012de6f8f82 *DESCRIPTION
 d7b943516dee762fd57996fd29ca6b65 *NAMESPACE
 76de3d1d1a7fb1753fa7a72c7e771680 *R/InspectChangepoint-internal.R
 48c0a8c18e87d1057399e07a2b9a83c5 *R/PiS.R
@@ -17,7 +17,7 @@ e4f119882d3988242af942b3480b5d10 *R/sparse.svd.R
 8c59f7b8ed29d2fdd64d8cdcc98eb60e *R/summary.inspect.R
 e6b5258f44ab3d0563f63a380bb72d15 *R/vector.norm.R
 419928a5c614095a9bcc0bfd9d8f8d74 *R/vector.soft.thresh.R
-5916118d9ef59e2b9c8cd45aa2d5edb9 *build/partial.rdb
+18ea1978409974881d51b7838f1ab73b *build/partial.rdb
 19f9648a45a45875d5e920b21944ec35 *man/InspectChangepoint-package.Rd
 a5ac8ed90d91c3e4ceaccff68ce12300 *man/PiS.Rd
 470f0b6572419692402cf34f212de400 *man/PiW.Rd
