@@ -4,7 +4,15 @@
 \alias{inspect}
 \title{Informative sparse projection for estimation of changepoints (inspect)}
 \usage{
-inspect(x, lambda, threshold, schatten=c(1,2), M)
+inspect(
+  x,
+  lambda,
+  threshold,
+  schatten = c(1, 2),
+  M,
+  missing_data = "auto",
+  show_progress = FALSE
+)
 }
 \arguments{
 \item{x}{The input data matrix of a high-dimensional time series, with each component time series stored as a row.}
@@ -16,6 +24,10 @@ inspect(x, lambda, threshold, schatten=c(1,2), M)
 \item{schatten}{The Schatten norm constraint to use in the \code{\link{locate.change}} function. Default is schatten = 2, i.e. a Frobenius norm constraint.}
 
 \item{M}{The Monte Carlo parameter used for wild binary segmentation. Default is M = 0, which means a classical binary segmentation scheme is used.}
+
+\item{missing_data}{How missing data in x should be handled. If missing_data='meanImpute', then missing data are imputed with row means; if 'MissInspect', use the MissInspect algorithm of Follain et al. (2022)' if 'auto', the program will make the choice depending on the amount of missingness.}
+
+\item{show_progress}{whether to display progress of computation}
 }
 \value{
 The return value is an S3 object of class 'inspect'. It contains a list of two objeccts:
@@ -34,7 +46,7 @@ More details about model assumption and theoretical guarantees can be found in W
 }
 \examples{
 n <- 500; p <- 100; ks <- 30; zs <- c(125,250,375)
-varthetas <- c(0.1,0.15,0.2); overlap <- 0.5
+varthetas <- c(0.2,0.4,0.6); overlap <- 0.5
 obj <- multi.change(n, p, ks, zs, varthetas, overlap)
 x <- obj$x
 threshold <- compute.threshold(n,p)
@@ -45,4 +57,5 @@ plot(ret)
 }
 \references{
 Wang, T. and Samworth, R. J. (2018) High dimensional changepoint estimation via sparse projection. \emph{J. Roy. Statist. Soc., Ser. B}, \strong{80}, 57--83.
+Follain, B., Wang, T. and Samworth R. J. (2022) High-dimensional changepoint estimation with heterogeneous missingness. \emph{J. Roy. Statist. Soc., Ser. B}, to appear
 }

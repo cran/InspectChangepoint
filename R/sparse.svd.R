@@ -9,9 +9,8 @@
 #' @param Z Input matrix whose left leading singular vector is to be estimated.
 #' @param lambda Regularisation parameter
 #' @param schatten Schatten norm constraint to be used. Default uses Schatten-2-norm, i.e. the Frobenius norm. Also possible to use Schatten-1-norm, the nuclear norm.
-#' @param tolerance Tolerance criterion for convergence of the ADMM algorithm. Not used when shatten=2.
-#' @param max.iter Maximum number of iteration in the ADMM algorithm. Not used when shatten=2.
-#'
+#' @param max.iter maximum iteration for ADMM, only used if schatten=1
+#' @param tolerance tolerance level for convergence checking, only used if schatten=1
 #' @return A vector that has the same length as nrow(Z) is returned.
 #' @examples
 #' Z <- matrix(rnorm(20),4,5)
@@ -19,34 +18,67 @@
 #' sparse.svd(Z, lambda)
 #' @export
 
-sparse.svd <- function(Z, lambda, schatten=c(1, 2), tolerance=1e-5, max.iter=10000){
-    if (missing(schatten)) schatten <- 2
-    if (schatten == 2){
-        # with Frobenius norm constraint, the sparse vector is obtained by soft
-        # thresholding
-        Mhat <- vector.soft.thresh(Z, lambda)
-    } else {
-        # with nuclear norm constraint, the sparse vector is obtained by ADMM
-        p <- dim(Z)[1]; n <- dim(Z)[2]; gamma <- 1;
-        X <- matrix(0,p,n); Y <- matrix(0,p,n); U <- matrix(0,p,n)
-        iter <- 0
-        while ((iter < max.iter) | (max.iter == 0)) {
-            iter <- iter + 1
-            X <- PiS(Y - U + gamma * Z)
-            Y <- vector.soft.thresh(X + U, lambda * gamma)
-            U <- U + (X - Y)
-            if (vector.norm(X - Y) < tolerance) break
-        }
-        Mhat <- X
+sparse.svd <- function(Z, lambda, schatten=c(1, 2), max.iter=1000, tolerance=1e-5){
+  if (missing(schatten)) schatten <- 2
+  if (schatten == 2){
+    # with Frobenius norm constraint, the sparse vector is obtained by soft
+    # thresholding
+    Mhat <- vector.soft.thresh(Z, lambda)
+  } else {
+    # with nuclear norm constraint, the sparse vector is obtained by ADMM
+    p <- dim(Z)[1]; n <- dim(Z)[2]; gamma <- 1;
+    X <- matrix(0,p,n); Y <- matrix(0,p,n); U <- matrix(0,p,n)
+    iter <- 0
+    while ((iter < max.iter) | (max.iter == 0)) {
+      iter <- iter + 1
+      X <- PiS(Y - U + gamma * Z)
+      Y <- vector.soft.thresh(X + U, lambda * gamma)
+      U <- U + (X - Y)
+      if (vector.norm(X - Y) < tolerance) break
     }
+    Mhat <- X
+  }
 
-    if (nrow(Mhat) < ncol(Mhat)){
-        vector.proj <- power.method(Mhat%*%t(Mhat), 1e-5)
+  # compute the leading left singular vector of Mhat
+  if (sum(Mhat^2)!=0){
+    # compute the leading left singular vector
+    if (requireNamespace("RSpectra") && min(dim(Mhat)) >= 3){
+      vector.proj <- RSpectra::svds(Mhat, 1)$u[,1]
     } else {
-        tmp <- Mhat %*% power.method(t(Mhat)%*%Mhat, 1e-5)
-        vector.proj <- tmp/vector.norm(tmp)
+      vector.proj <- svd(Mhat)$u[,1]
     }
-
-    return(vector.proj)
+  } else {
+    # if the thresholded matrix is zero, return a random vector
+    vector.proj <- rnorm(p)
+    vector.proj <- vector.proj / vector.norm(vector.proj)
+  }
+  return(vector.proj)
 }
 
+#' Computing the sparse leading left singular vector of a matrix with missing entries
+#' @param Z Input matrix whose left leading singular vector is to be estimated.
+#' @param lambda Regularisation parameter
+#' @param max_iter maximum iteration
+#' @param tol tolerance level for convergence
+#' @export
+sparse.svd.missing <- function(Z, lambda, max_iter=1000, tol=1e-10){
+
+  if (sum(abs(Z)) == 0) return(random.UnitVector(nrow(Z)))
+
+  if (requireNamespace("RSpectra") && min(dim(Z)) >= 3){
+    vhat <- RSpectra::svds(Z, 1)$u[,1]
+  } else {
+    vhat <- svd(Z)$u[,1]
+  }
+
+  for (iter in 1:max_iter){
+    vhat_old <- vhat
+    what <- vector.normalise(t(Z) %*% vhat)
+    tmp <- Z %*% what
+    lambda_tmp <- min(lambda, max(abs(tmp)) - 1e-10)
+    vhat <- vector.normalise(vector.soft.thresh(Z %*% what, lambda_tmp))
+    if (vector.norm(vhat_old - vhat) < tol) break
+  }
+
+  return(as.vector(vhat))
+}
